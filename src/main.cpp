@@ -8,6 +8,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
+#include <algorithm>  
 
 // for convenience
 using json = nlohmann::json;
@@ -115,16 +116,41 @@ int main()
                             double py = j[1]["y"];
                             double psi = j[1]["psi"];
                             double v = j[1]["speed"];
-
+                            double steer_value = j[1]["steering_angle"];
+                            double throttle_value = j[1]["throttle"];                          
                             /*
                              * TODO: Calculate steering angle and throttle using MPC.
                              *
                              * Both are in between [-1, 1].
                              *
                              */
-                            double steer_value;
-                            double throttle_value;
+ 
+                            // transform way points from global to vehicle coordinate system
+                            size_t len = min(ptsx.size(), ptsy.size());
+                            Eigen::VectorXd ptsxVehicle(len);
+                            Eigen::VectorXd ptsyVehicle(len);
+                            for (size_t i = 0; i < len; i++) 
+                            {
+                                ptsxVehicle(i) = cos(psi) * (ptsx[i] - px) + sin(psi) * (ptsy[i] - py);
+                                ptsyVehicle(i) = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
+                            }
 
+                            auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
+                            double cte = polyeval(coeffs, 0);  // Vehicle x is 0 in vehicle coordinates
+
+                            double epsi = psi - atan(coeffs[1]); // Vehicle psi is 0 in vehicle coordinates
+
+
+                            Eigen::VectorXd state(6);
+                            
+                            state << 0, 0, 0, v, cte, epsi;
+                            auto vars = mpc.Solve(state, coeffs);
+                            steer_value = vars[0] / deg2rad(25);
+                            throttle_value = vars[1];
+                            
+                            
+                            
+                            
                             json msgJson;
                             // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                             // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
