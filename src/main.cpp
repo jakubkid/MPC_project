@@ -8,7 +8,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
-#include <algorithm>  
+#include <algorithm>
 
 // for convenience
 using json = nlohmann::json;
@@ -87,7 +87,6 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order)
 int main()
 {
     uWS::Hub h;
-
     // MPC is initialized here!
     MPC mpc;
 
@@ -95,6 +94,7 @@ int main()
             [&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                     uWS::OpCode opCode)
             {
+                double latency = 0.1; // for grading set it to 0.1s
                 // "42" at the start of the message means there's a websocket message event.
                 // The 4 signifies a websocket message
                 // The 2 signifies a websocket event
@@ -117,19 +117,24 @@ int main()
                             double psi = j[1]["psi"];
                             double v = j[1]["speed"];
                             double steer_value = j[1]["steering_angle"];
-                            double throttle_value = j[1]["throttle"];                          
+                            double throttle_value = j[1]["throttle"];
                             /*
                              * TODO: Calculate steering angle and throttle using MPC.
                              *
                              * Both are in between [-1, 1].
                              *
                              */
- 
+                            // handle latency
+                            px = px + v * cos(psi) * latency;
+                            py = py + v * sin(psi) * latency;
+                            psi = psi - v * steer_value / mpc.getLf() * latency;
+                            v = v + throttle_value * latency;
+
                             // transform way points from global to vehicle coordinate system
                             size_t len = min(ptsx.size(), ptsy.size());
                             Eigen::VectorXd ptsxVehicle(len);
                             Eigen::VectorXd ptsyVehicle(len);
-                            for (size_t i = 0; i < len; i++) 
+                            for (size_t i = 0; i < len; i++)
                             {
                                 ptsxVehicle(i) = cos(psi) * (ptsx[i] - px) + sin(psi) * (ptsy[i] - py);
                                 ptsyVehicle(i) = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
@@ -138,19 +143,18 @@ int main()
                             auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
                             double cte = polyeval(coeffs, 0);  // Vehicle x is 0 in vehicle coordinates
 
-                            double epsi = psi - atan(coeffs[1]); // Vehicle psi is 0 in vehicle coordinates
-
+                            double epsi = psi - atan(coeffs[1]);
 
                             Eigen::VectorXd state(6);
-                            
+
                             state << 0, 0, 0, v, cte, epsi;
-                            auto vars = mpc.Solve(state, coeffs);
-                            steer_value = vars[0] / deg2rad(25);
-                            throttle_value = vars[1];
-                            
-                            
-                            
-                            
+                            MPCsolution_t result = mpc.Solve(state, coeffs);
+                            steer_value = -result.steering / deg2rad(25);
+                            throttle_value = result.acc;
+
+
+
+
                             json msgJson;
                             // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                             // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -158,14 +162,12 @@ int main()
                             msgJson["throttle"] = throttle_value;
 
                             //Display the MPC predicted trajectory
-                            vector<double> mpc_x_vals;
-                            vector<double> mpc_y_vals;
 
                             //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                             // the points in the simulator are connected by a Green line
 
-                            msgJson["mpc_x"] = mpc_x_vals;
-                            msgJson["mpc_y"] = mpc_y_vals;
+                            msgJson["mpc_x"] = result.mpcX;
+                            msgJson["mpc_y"] = result.mpcY;
 
                             //Display the waypoints/reference line
                             vector<double> next_x_vals;
@@ -174,6 +176,11 @@ int main()
                             //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                             // the points in the simulator are connected by a Yellow line
 
+                            for (size_t i = 0; i < len; i ++)
+                            {
+                                next_x_vals.push_back(ptsxVehicle(i));
+                                next_y_vals.push_back(ptsyVehicle(i));
+                            }
                             msgJson["next_x"] = next_x_vals;
                             msgJson["next_y"] = next_y_vals;
 
@@ -188,7 +195,7 @@ int main()
                             //
                             // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
                             // SUBMITTING.
-                            this_thread::sleep_for(chrono::milliseconds(100));
+                            this_thread::sleep_for(chrono::milliseconds((int)latency*1000));
                             ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
                         }
                     }
