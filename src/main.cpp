@@ -99,7 +99,7 @@ int main()
                 // The 4 signifies a websocket message
                 // The 2 signifies a websocket event
                 string sdata = string(data).substr(0, length);
-                cout << sdata << endl;
+                //cout << sdata << endl;
                 if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2')
                 {
                     string s = hasData(sdata);
@@ -142,8 +142,7 @@ int main()
 
                             auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
                             double cte = polyeval(coeffs, 0);  // Vehicle x is 0 in vehicle coordinates
-
-                            double epsi = atan(coeffs[1]);
+                            double epsi = -atan(coeffs[1]);
 
                             Eigen::VectorXd state(6);
 
@@ -185,7 +184,7 @@ int main()
                             msgJson["next_y"] = next_y_vals;
 
                             auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-                            std::cout << msg << std::endl;
+                            std::cout << msg << endl << endl;
                             // Latency
                             // The purpose is to mimic real driving conditions where
                             // the car does actuate the commands instantly.
