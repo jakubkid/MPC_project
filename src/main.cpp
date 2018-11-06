@@ -143,13 +143,13 @@ int main()
                             auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
                             double cte = polyeval(coeffs, 0);  // Vehicle x is 0 in vehicle coordinates
 
-                            double epsi = psi - atan(coeffs[1]);
+                            double epsi = atan(coeffs[1]);
 
                             Eigen::VectorXd state(6);
 
                             state << 0, 0, 0, v, cte, epsi;
                             MPCsolution_t result = mpc.Solve(state, coeffs);
-                            steer_value = -result.steering / deg2rad(25);
+                            steer_value = -result.steering / (deg2rad(25) * mpc.getLf());
                             throttle_value = result.acc;
 
 

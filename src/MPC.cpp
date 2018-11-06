@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 // NOTE: feel free to play around with this
 // or do something completely different
-double ref_v = 25;
+double ref_v = 40;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -62,21 +62,21 @@ public:
 
         for (size_t t = 0; t < N; t++)
         {
-            fg[0] += 50 * CppAD::pow(vars[cte_start + t], 2); // track error
-            fg[0] += 5 * CppAD::pow(vars[epsi_start + t], 2); // direction error
+            fg[0] += 20 * CppAD::pow(vars[cte_start + t], 2); // track error
+            fg[0] += 20 * CppAD::pow(vars[epsi_start + t], 2); // direction error
             fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2); // offset from reference speed
         }
         for (size_t t = 0; t < N - 1; t++)
         {
-            fg[0] += CppAD::pow(vars[delta_start + t], 2); // wheel control
+            fg[0] += 10 * CppAD::pow(vars[delta_start + t], 2); // wheel control
             fg[0] += CppAD::pow(vars[a_start + t], 2); // speed control
         }
 
         for (size_t i = 0; i < N - 2; i++)
         {
             // Tune this part!
-            fg[0] += 500 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-            fg[0] += 100 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+            fg[0] += 10 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+            fg[0] += 10 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
         }
 
         //
@@ -290,7 +290,7 @@ MPCsolution_t MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
     // creates a 2 element double vector.
     MPCsolution_t result;
     result.steering = solution.x[delta_start];
-    result.acc =solution.x[a_start];
+    result.acc = solution.x[a_start];
     for(size_t i = 0; i < N - 1; i++)
     {
         result.mpcX.push_back(solution.x[x_start + i + 1]);
