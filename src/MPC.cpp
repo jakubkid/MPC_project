@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 20;
-double dt = 0.1;
+size_t N = 10;
+double dt = 0.05;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 // NOTE: feel free to play around with this
 // or do something completely different
-double ref_v = 40;
+double ref_v = 65;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -60,23 +60,26 @@ public:
         // TODO: Define the cost related the reference state and
         // any anything you think may be beneficial.
 
+        // Error
         for (size_t t = 0; t < N; t++)
         {
             fg[0] += 20 * CppAD::pow(vars[cte_start + t], 2); // track error
             fg[0] += 20 * CppAD::pow(vars[epsi_start + t], 2); // direction error
             fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2); // offset from reference speed
         }
+        
+        // steering input
         for (size_t t = 0; t < N - 1; t++)
         {
             fg[0] += 10 * CppAD::pow(vars[delta_start + t], 2); // wheel control
             fg[0] += CppAD::pow(vars[a_start + t], 2); // speed control
         }
-
+        
+        // Rate of change
         for (size_t i = 0; i < N - 2; i++)
         {
-            // Tune this part!
-            fg[0] += 10 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-            fg[0] += 10 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+            fg[0] += 100 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+            fg[0] += 100 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
         }
 
         //

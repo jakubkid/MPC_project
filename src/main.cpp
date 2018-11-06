@@ -136,8 +136,17 @@ int main()
                             Eigen::VectorXd ptsyVehicle(len);
                             for (size_t i = 0; i < len; i++)
                             {
-                                ptsxVehicle(i) = cos(psi) * (ptsx[i] - px) + sin(psi) * (ptsy[i] - py);
-                                ptsyVehicle(i) = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
+                                double tempX = cos(psi) * (ptsx[i] - px) + sin(psi) * (ptsy[i] - py);
+                                if(tempX < 0)
+                                {
+                                    ptsxVehicle(i) = 0;
+                                    ptsyVehicle(i) = 0;
+                                }
+                                else
+                                {
+                                    ptsxVehicle(i) = tempX;
+                                    ptsyVehicle(i) = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
+                                }
                             }
 
                             auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
@@ -145,7 +154,8 @@ int main()
                             double epsi = -atan(coeffs[1]);
 
                             Eigen::VectorXd state(6);
-
+    
+                            cout << "v: " << v << " cte: " << cte << " epsi: " << epsi << endl;
                             state << 0, 0, 0, v, cte, epsi;
                             MPCsolution_t result = mpc.Solve(state, coeffs);
                             steer_value = -result.steering / (deg2rad(25) * mpc.getLf());
