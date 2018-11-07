@@ -119,9 +119,7 @@ int main()
                             double steer_value = j[1]["steering_angle"];
                             double throttle_value = j[1]["throttle"];
                             /*
-                             * TODO: Calculate steering angle and throttle using MPC.
-                             *
-                             * Both are in between [-1, 1].
+                             * Calculate steering angle and throttle using MPC.
                              *
                              */
                             // handle latency
@@ -148,15 +146,20 @@ int main()
                                     ptsyVehicle(i) = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
                                 }
                             }
-
+                            // fit 3rd order polynomial
                             auto coeffs = polyfit(ptsxVehicle, ptsyVehicle, 3);
+                            
+                            // Calculate errors
                             double cte = polyeval(coeffs, 0);  // Vehicle x is 0 in vehicle coordinates
                             double epsi = -atan(coeffs[1]);
 
                             Eigen::VectorXd state(6);
     
-                            cout << "v: " << v << " cte: " << cte << " epsi: " << epsi << endl;
+                            //cout << "v: " << v << " cte: " << cte << " epsi: " << epsi << endl;
+                            // Because desired path was transformed to vehicle coordinates px, py and psi is 0.
                             state << 0, 0, 0, v, cte, epsi;
+                            
+                            //Calculate steering angle and throttle using MPC.
                             MPCsolution_t result = mpc.Solve(state, coeffs);
                             steer_value = -result.steering / (deg2rad(25) * mpc.getLf());
                             throttle_value = result.acc;
@@ -194,7 +197,7 @@ int main()
                             msgJson["next_y"] = next_y_vals;
 
                             auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-                            std::cout << msg << endl << endl;
+                            //std::cout << msg << endl << endl;
                             // Latency
                             // The purpose is to mimic real driving conditions where
                             // the car does actuate the commands instantly.

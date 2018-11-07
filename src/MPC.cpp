@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 // NOTE: feel free to play around with this
 // or do something completely different
-double ref_v = 65;
+double ref_v = 70;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -50,36 +50,32 @@ public:
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
     void operator()(ADvector& fg, const ADvector& vars)
     {
-        // TODO: implement MPC
         // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
         // NOTE: You'll probably go back and forth between this function and
         // the Solver function below.
         fg[0] = 0;
 
         // Reference State Cost
-        // TODO: Define the cost related the reference state and
-        // any anything you think may be beneficial.
-
         // Error
         for (size_t t = 0; t < N; t++)
         {
-            fg[0] += 20 * CppAD::pow(vars[cte_start + t], 2); // track error
-            fg[0] += 20 * CppAD::pow(vars[epsi_start + t], 2); // direction error
-            fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2); // offset from reference speed
+            fg[0] += 20 * CppAD::pow(vars[cte_start + t], 2);       // track error
+            fg[0] += 20 * CppAD::pow(vars[epsi_start + t], 2);      // direction error
+            fg[0] += 1  * CppAD::pow(vars[v_start + t] - ref_v, 2); // offset from reference speed
         }
         
-        // steering input
+        // control
         for (size_t t = 0; t < N - 1; t++)
         {
-            fg[0] += 10 * CppAD::pow(vars[delta_start + t], 2); // wheel control
-            fg[0] += CppAD::pow(vars[a_start + t], 2); // speed control
+            fg[0] += 2 * CppAD::pow(vars[delta_start + t], 2); // wheel control
+            fg[0] += 1 * CppAD::pow(vars[a_start + t], 2);     // speed control
         }
         
-        // Rate of change
+        // Rate of control change
         for (size_t i = 0; i < N - 2; i++)
         {
-            fg[0] += 100 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-            fg[0] += 100 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+            fg[0] += 100 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2); // wheel control differential
+            fg[0] += 100 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);         // speed control differential
         }
 
         //
@@ -137,7 +133,7 @@ public:
             // This is also CppAD can compute derivatives and pass
             // these to the solver.
 
-            // TODO: Setup the rest of the model constraints
+            // Setup the rest of the model constraints
             fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
             fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
             fg[1 + psi_start + t] = psi1 - (psi0 + (v0/Lf) * delta0 * dt);
@@ -172,13 +168,13 @@ MPCsolution_t MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
     double cte = state[4];
     double epsi = state[5];
 
-    // TODO: Set the number of model variables (includes both states and inputs).
+    // Set the number of model variables (includes both states and inputs).
     // For example: If the state is a 4 element vector, the actuators is a 2
     // element vector and there are 10 timesteps. The number of variables is:
     //
     // 4 * 10 + 2 * 9
     size_t n_vars = N * 6 + (N - 1) * 2;
-    // TODO: Set the number of constraints
+    //  Set the number of constraints
     size_t n_constraints = N * 6;
 
     // Initial value of the independent variables.
@@ -286,11 +282,7 @@ MPCsolution_t MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
     auto cost = solution.obj_value;
     std::cout << "Cost " << cost << std::endl;
 
-    // TODO: Return the first actuator values. The variables can be accessed with
-    // `solution.x[i]`.
-    //
-    // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-    // creates a 2 element double vector.
+    // Return steering acceleration and calculated path for display
     MPCsolution_t result;
     result.steering = solution.x[delta_start];
     result.acc = solution.x[a_start];
