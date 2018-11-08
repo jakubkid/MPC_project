@@ -10,11 +10,12 @@ Self-Driving Car Engineer Nanodegree Program model predictive controller
 ## Write up
 
 * Model description
-    * Global kinematic model is used to calculate future vehicle path. Path with lowest cost is selected and first step is executed. 
+    * Global kinematic model is used to calculate future vehicle path. Path with lowest cost is selected and first step is executed.
+
     ![Kinematic model][Model]
 
     * The cost function
-        * emphasizes track and direction error so it gets weight of 20, next velocity error is also added but only with weight 1.
+        * emphasizes track and direction error so it gets weight of 20, next velocity error is added with weight 1.
         * Control signal is also added to the cost wheel control with weight 2 and speed control with weight 1
         * Rate of change in control signal is added with weights of 100
 * Time step and number of samples
