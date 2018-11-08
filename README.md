@@ -1,6 +1,7 @@
 [//]: # (Image References)
 
-[Model]:  ./img/kinematicModel.PNG "Model"
+[Model]:   ./img/kinematicModel.PNG "Model"
+[Problem]: ./img/referenceTrackProblem.png "Problem"
 
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program model predictive controller 
@@ -24,6 +25,10 @@ Self-Driving Car Engineer Nanodegree Program model predictive controller
     * 3rd order polynomial was fitted because it can estimate turns well enought and oscillations are less probable than with higher order polynomials.
 * Latency handling
     * Latency is handled in main.cpp current car position is shifted with assumption that turn rate and speed won't change in that time. 
+* Problem with reference track
+    * Reference track jumps widely when traveling throught corners at hight speed, It looks like simulator problem
+    
+    ![Reference path problem][Problem]
 
 ## Dependencies
 
