@@ -5,7 +5,7 @@
 
 using CppAD::AD;
 
-// TODO: Set the timestep length and duration
+// Set the timestep length and duration
 size_t N = 10;
 double dt = 0.05;
 
@@ -196,7 +196,7 @@ MPCsolution_t MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
     Dvector vars_lowerbound(n_vars);
     Dvector vars_upperbound(n_vars);
 
-    // TODO: Set lower and upper limits for variables.
+    // Set lower and upper limits for variables.
     // Set all non-actuators upper and lowerlimits
     // to the max negative and positive values.
     for (size_t i = 0; i < delta_start; i++)
