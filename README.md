@@ -8,7 +8,7 @@ Self-Driving Car Engineer Nanodegree Program model predictive controller
 
 ---
 
-## Write up
+## Report
 
 * Model description
     * Global kinematic model is used to calculate future vehicle path. Path with lowest cost is selected and first step is executed.
